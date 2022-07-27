@@ -8,13 +8,13 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-var url = flag.String("url", "", "url to scrape")
-var query = flag.String("query", "", "a jquery-style query to locate the target element")
-var interval = flag.Duration("interval", time.Minute, "scrape interval")
-var convo = flag.String("convo", "", "keybase conversation name of the keybase chat to send updates to. mutually exclusive with -team")
-var team = flag.String("team", "", "keybase team name of the keybase chat to send updates to. mutually exclusive with -convo")
-var channel = flag.String("channel", "", "keybase chat channel name under -name of the keybase chat to send updates to. ignored unless -team is usesd")
-var mention = flag.String("mention", "", "username to at-mention on target value changes")
+var fURL = flag.String("url", "", "url to scrape")
+var fQuery = flag.String("query", "", "a jquery-style query to locate the target element")
+var fInterval = flag.Duration("interval", time.Minute, "scrape interval")
+var fConvo = flag.String("convo", "", "keybase conversation name of the keybase chat to send updates to. mutually exclusive with -team")
+var fTeam = flag.String("team", "", "keybase team name of the keybase chat to send updates to. mutually exclusive with -convo")
+var fChannel = flag.String("channel", "", "keybase chat channel name under -name of the keybase chat to send updates to. ignored unless -team is usesd")
+var fMention = flag.String("mention", "", "username to at-mention on target value changes")
 
 func setupLogging() {
 	log.Logger = log.With().Caller().Logger()
@@ -22,24 +22,24 @@ func setupLogging() {
 
 func checkArgs() {
 	flag.Parse()
-	if len(*url) == 0 {
+	if len(*fURL) == 0 {
 		log.Fatal().Msg("missing url")
 	}
-	if len(*query) == 0 {
+	if len(*fQuery) == 0 {
 		log.Fatal().Msg("missing query")
 	}
-	if len(*team) == 0 && len(*convo) == 0 {
+	if len(*fTeam) == 0 && len(*fConvo) == 0 {
 		log.Fatal().Msg("missing team or convo")
 	}
 
 	log.Info().
-		Str("url", *url).
-		Str("query", *query).
-		Dur("interval", *interval).
-		Str("convo", *convo).
-		Str("team", *team).
-		Str("channel", *channel).
-		Str("mention", *mention).
+		Str("url", *fURL).
+		Str("query", *fQuery).
+		Dur("interval", *fInterval).
+		Str("convo", *fConvo).
+		Str("team", *fTeam).
+		Str("channel", *fChannel).
+		Str("mention", *fMention).
 		Msg("args")
 }
 
@@ -49,26 +49,26 @@ func setupKeybase() (sender sender) {
 		log.Fatal().Err(err).Msg("failed to setup keybase")
 	}
 
-	if len(*convo) != 0 {
+	if len(*fConvo) != 0 {
 		return func(msg string, useMention bool) error {
-			if useMention && len(*mention) != 0 {
-				msg = "@" + *mention + " " + msg
+			if useMention && len(*fMention) != 0 {
+				msg = "@" + *fMention + " " + msg
 			}
-			if _, err = kbc.SendMessageByTlfName(*convo, msg); err != nil {
+			if _, err = kbc.SendMessageByTlfName(*fConvo, msg); err != nil {
 				return err
 			}
 			return nil
 		}
-	} else if len(*team) != 0 {
+	} else if len(*fTeam) != 0 {
 		useChannel := (*string)(nil)
-		if len(*channel) != 0 {
-			useChannel = channel
+		if len(*fChannel) != 0 {
+			useChannel = fChannel
 		}
 		return func(msg string, useMention bool) error {
-			if useMention && len(*mention) != 0 {
-				msg = "@" + *mention + " " + msg
+			if useMention && len(*fMention) != 0 {
+				msg = "@" + *fMention + " " + msg
 			}
-			if _, err = kbc.SendMessageByTeamName(*team, useChannel, msg); err != nil {
+			if _, err = kbc.SendMessageByTeamName(*fTeam, useChannel, msg); err != nil {
 				return err
 			}
 			return nil
@@ -82,5 +82,9 @@ func main() {
 	setupLogging()
 	checkArgs()
 	sender := setupKeybase()
-	run(sender, &watchedField{url: *url, query: *query})
+	w, err := newWatcher(*fURL, *fQuery)
+	if err != nil {
+		log.Fatal().Err(err).Msg("failed to create watcher")
+	}
+	run(sender, w)
 }
