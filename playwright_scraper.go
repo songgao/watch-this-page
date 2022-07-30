@@ -85,7 +85,7 @@ func (s *playwrightScraper) ensurePageIndex(i uint64) (err error) {
 }
 
 func (s *playwrightScraper) getWatchedField() (target string, err error) {
-	pageIndex := atomic.AddUint64(&s.callCount, 1)
+	pageIndex := atomic.AddUint64(&s.callCount, 1) % numBrowserContexts
 
 	log.Debug().Uint64("page_index", pageIndex).Msg("+ getWatchedField")
 	defer log.Debug().Uint64("page_index", pageIndex).Msg("- getWatchedField")
