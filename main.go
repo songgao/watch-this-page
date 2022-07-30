@@ -1,7 +1,11 @@
 package main
 
 import (
+	"context"
 	"flag"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/keybase/go-keybase-chat-bot/kbchat"
@@ -82,9 +86,17 @@ func main() {
 	setupLogging()
 	checkArgs()
 	sender := setupKeybase()
-	w, err := newHTTPClientScraper(*fURL, *fQuery)
+	s, err := newPlaywrightScraper(*fURL, *fQuery)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create watcher")
 	}
-	run(sender, w)
+	defer s.shutdown()
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+		<-c
+		cancel()
+	}()
+	run(ctx, sender, s)
 }
