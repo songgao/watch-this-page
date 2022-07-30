@@ -9,7 +9,8 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const numBrowserContexts = 32
+const numBrowserContexts = 16
+const pageTimeout = float64(4000) // 4s
 
 type playwrightScraper struct {
 	u *url.URL
@@ -67,8 +68,6 @@ func (s *playwrightScraper) shutdown() (err error) {
 
 	return s.browser.Close()
 }
-
-const pageTimeout = float64(4000) // 4s
 
 func (s *playwrightScraper) ensurePageIndex(i uint64) (err error) {
 	if s.pages[i] != nil {
