@@ -68,19 +68,24 @@ func (s *playwrightScraper) shutdown() (err error) {
 	return s.browser.Close()
 }
 
+const pageTimeout = float64(4000) // 4s
+
 func (s *playwrightScraper) ensurePageIndex(i uint64) (err error) {
 	if s.pages[i] != nil {
 		return nil
 	}
-	s.pages[i], err = s.browser.NewPage()
+	page, err := s.browser.NewPage()
 	if err != nil {
 		log.Error().Uint64("page_index", i).Err(err).Msg("cannot create a new page")
 		return err
 	}
-	if _, err = s.pages[i].Goto(s.u.String()); err != nil {
+	page.SetDefaultNavigationTimeout(pageTimeout) // 4s
+	page.SetDefaultTimeout(pageTimeout)           // 4s
+	if _, err = page.Goto(s.u.String()); err != nil {
 		log.Error().Uint64("page_index", i).Err(err).Msg("cannot go to the URL")
-		return
+		return err
 	}
+	s.pages[i] = page
 	return nil
 }
 
@@ -97,7 +102,7 @@ func (s *playwrightScraper) getWatchedField() (target string, err error) {
 
 	page := s.pages[pageIndex]
 	if _, err = page.Reload(); err != nil {
-		log.Error().Err(err).Msg("cannot go to the URL")
+		log.Error().Err(err).Msg("cannot reload")
 		return "", err
 	}
 	entries, err := page.QuerySelectorAll(s.q)
