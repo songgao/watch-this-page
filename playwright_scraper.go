@@ -57,14 +57,6 @@ func newPlaywrightScraper(pageURL string, query string) (s *playwrightScraper, e
 		}
 	}()
 
-	for i := 0; i < numBrowserContexts; i++ {
-		s.pages[i], err = s.browser.NewPage()
-		if err != nil {
-			log.Error().Err(err).Int("page_index", i).Msg("cannot create a new page")
-			return nil, err
-		}
-	}
-
 	return s, nil
 }
 
@@ -75,12 +67,35 @@ func (s *playwrightScraper) shutdown() (err error) {
 	return s.browser.Close()
 }
 
+func (s *playwrightScraper) ensurePageIndex(i uint64) (err error) {
+	if s.pages[i] != nil {
+		return nil
+	}
+	s.pages[i], err = s.browser.NewPage()
+	if err != nil {
+		log.Error().Uint64("page_index", i).Err(err).Msg("cannot create a new page")
+		return err
+	}
+	if _, err = s.pages[i].Goto(s.u.String()); err != nil {
+		log.Error().Uint64("page_index", i).Err(err).Msg("cannot go to the URL")
+		return
+	}
+	return nil
+}
+
 func (s *playwrightScraper) getWatchedField() (target string, err error) {
 	pageIndex := atomic.AddUint64(&s.callCount, 1)
+
 	log.Debug().Uint64("page_index", pageIndex).Msg("+ getWatchedField")
 	defer log.Debug().Uint64("page_index", pageIndex).Msg("- getWatchedField")
+
+	if err = s.ensurePageIndex(pageIndex); err != nil {
+		log.Error().Err(err).Msg("ensure page error")
+		return "", err
+	}
+
 	page := s.pages[pageIndex]
-	if _, err = page.Goto(s.u.String()); err != nil {
+	if _, err = page.Reload(); err != nil {
 		log.Error().Err(err).Msg("cannot go to the URL")
 		return "", err
 	}
