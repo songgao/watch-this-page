@@ -82,7 +82,7 @@ func main() {
 	setupLogging()
 	checkArgs()
 	sender := setupKeybase()
-	w, err := newWatcher(*fURL, *fQuery)
+	w, err := newHTTPClientScraper(*fURL, *fQuery)
 	if err != nil {
 		log.Fatal().Err(err).Msg("failed to create watcher")
 	}

@@ -9,7 +9,7 @@ import (
 
 type sender = func(msg string, useMention bool) error
 
-func makeMsg(w *watcher, target string, last *string) string {
+func makeMsg(w scraper, target string, last *string) string {
 	if len(target) == 0 && last != nil {
 		target = *last
 	}
@@ -17,10 +17,10 @@ func makeMsg(w *watcher, target string, last *string) string {
 		target = "<empty>"
 	}
 	return fmt.Sprintf("url: %s\nquery: `%s`\ncurrent value: `%s`",
-		w.u.String(), w.query, target)
+		w.url().String(), w.query(), target)
 }
 
-func run(sender sender, w *watcher) {
+func run(sender sender, w scraper) {
 	err := sender(":rocket::rocket::rocket::rocket::rocket:\n\nI'm alive!\n\n:rocket::rocket::rocket::rocket::rocket:", false)
 	if err != nil {
 		log.Error().Err(err).Msg("send error")
