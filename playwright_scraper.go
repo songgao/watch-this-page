@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/url"
 	"sync/atomic"
 
@@ -103,6 +104,10 @@ func (s *playwrightScraper) getWatchedField() (target string, err error) {
 	if err != nil {
 		log.Error().Err(err).Msg("cannot get entries")
 		return "", err
+	}
+	if len(entries) != 1 {
+		log.Error().Int("num_entries", len(entries)).Msg("unexpected number of entries")
+		return "", fmt.Errorf("unexpected number of entries %v", len(entries))
 	}
 	text, err := entries[0].TextContent()
 	if err != nil {
