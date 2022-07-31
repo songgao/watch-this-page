@@ -9,7 +9,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-const numBrowserContexts = 16
+const numBrowserContexts = 8
 const pageTimeout = float64(4000) // 4s
 
 type playwrightScraper struct {
@@ -48,7 +48,7 @@ func newPlaywrightScraper(pageURL string, query string) (s *playwrightScraper, e
 	}
 	s.browser, err = pw.Chromium.Launch()
 	if err != nil {
-		log.Error().Err(err).Msg("cannot launch chromium")
+		log.Error().Err(err).Msg("cannot launch browser")
 		return nil, err
 	}
 
